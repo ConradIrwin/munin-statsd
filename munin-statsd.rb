@@ -32,10 +32,7 @@ def statsd_method(config, name)
 end
 
 services = node.list
-STDOUT.puts "collection stuff for services #{services.inspect}"
-STDOUT.puts "collection configs"
 configs = node.config services
-STDOUT.puts "collection data"
 all_data = node.fetch services
 services.each do |service|
   config = configs[service]
