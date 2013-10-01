@@ -15,7 +15,8 @@ opts = Trollop::options do
   opt :schema_base, "Schema base (all statsd metrics start with this value -> defaults to machine name)", type: String
 end
 
-opts[:munin_hosts] = opts[:munin_hosts].split(",").map(&:strip!)
+opts[:munin_hosts] = opts[:munin_hosts].split(",")
+opts[:munin_hosts].map(&:strip!)
 
 def statsd_method(config, name)
   type = config["metrics"][name]["type"] rescue nil # if there is no configuration or some other problems
