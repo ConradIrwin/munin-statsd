@@ -35,7 +35,7 @@ if __FILE__==$0
   opts[:munin_hosts].each do |hostname|
     node = Munin::Node.new(hostname, opts[:munin_port])
     statsd = Statsd.new(opts[:statsd_host], opts[:statsd_port])
-    statsd.namespace = opts[:schema_base] || hostname.split(".").first
+    statsd.namespace = opts[:schema_base] || "munin.#{hostname.split(".").first}"
 
     services = node.list
     configs = node.config services
