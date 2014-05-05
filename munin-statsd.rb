@@ -13,6 +13,7 @@ opts = Trollop::options do
   opt :statsd_host, "Statsd Host", type: String, default: "localhost"
   opt :statsd_port, "Statsd Port", type: Integer, default: 8125
   opt :schema_base, "Schema base (all statsd metrics start with this value -> defaults to machine name)", type: String
+  opt :aws, "Get list of instances from AWS"
 end
 
 opts[:munin_hosts] = opts[:munin_hosts].split(",")
@@ -31,8 +32,28 @@ def statsd_method(config, name)
   end
 end
 
+def machines(opts)
+  if opts[:aws]
+    require 'aws-sdk'
+    require 'dotenv'
+    Dotenv.load
+
+    AWS.config(
+      access_key_id: ENV["BUGSNAG_WEBSITE_AWS_ACCESS_KEY"],
+      secret_access_key: ENV["BUGSNAG_WEBSITE_AWS_SECRET_KEY"]
+    )
+    instances = AWS::EC2::Client.new.describe_instances(filters: [{name: 'instance-state-name', values: ['running']}])
+    instances.instance_index.values.map do |instance|
+      "#{instance.tag_set.detect{ |x| x[:key] == 'Name' }[:value]}.ec2.bugsnag.com"
+    end
+  else
+    opts[:munin_hosts]
+  end
+end
+
+
 if __FILE__==$0
-  opts[:munin_hosts].each do |hostname|
+  machines(opts).each do |hostname|
     node = Munin::Node.new(hostname, opts[:munin_port])
     statsd = Statsd.new(opts[:statsd_host], opts[:statsd_port])
     statsd.namespace = opts[:schema_base] || "munin.#{hostname.split(".").first}"
